@@ -1,13 +1,14 @@
 import requests
+import re
 
-# 1. 接口地址（你提供的POST地址）
+# 1. 接口地址
 url = "https://snein.telfri-edu.com/index/geetest/auth/login"
 
-# 2. 严格复刻你提供的请求头（服务器校验关键）
+# 2. 严格复刻请求头（完全匹配抓包信息）
 headers = {
     "Host": "snein.telfri-edu.com",
     "Connection": "keep-alive",
-    "Content-Length": "0",  # 无请求体，长度为0
+    "Content-Length": "0",
     "sec-ch-ua-platform": "\"Windows\"",
     "X-Requested-With": "XMLHttpRequest",
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36",
@@ -23,28 +24,52 @@ headers = {
     "Accept-Language": "zh-CN,zh;q=0.9"
 }
 
-# 3. Cookie（你说留空也能返回数据，这里填你自己的SESSION_NEW即可）
-cookies = {
-    "SESSION_NEW": "NjgwYjU5MjUtMjU2Zi00NGQ5LTlhYTgtOTNlYzY5YjNjY2Rh"  # 可替换为你的真实SESSION
-}
-
-# 4. 发送POST请求（无请求体，严格匹配Content-Length:0）
+# 3. 发送请求（无需手动传Cookie，自动从响应头提取）
 try:
-    response = requests.post(url, headers=headers, cookies=cookies, data=None)
-    # 5. 解析返回的JSON数据
+    # 发送POST请求（data=None 严格匹配Content-Length:0）
+    response = requests.post(
+        url=url,
+        headers=headers,
+        data=None,
+        timeout=10
+    )
+    
+    # 检查响应状态码
+    response.raise_for_status()
+    
+    # --------------------------
+    # 核心：从响应头提取SESSION_NEW
+    # --------------------------
+    # 方法1：从Set-Cookie头中提取（最精准，匹配你的抓包）
+    set_cookie = response.headers.get("Set-Cookie", "")
+    # 用正则精准匹配SESSION_NEW的值（只取=后面;前面的部分）
+    match = re.search(r"SESSION_NEW=([^;]+)", set_cookie)
+    if match:
+        session_new = match.group(1)
+    else:
+        session_new = "未获取到SESSION_NEW"
+    
+    # --------------------------
+    # 提取接口返回的challenge/gt
+    # --------------------------
     result = response.json()
+    challenge = result.get("challenge", "无返回值")
+    gt = result.get("gt", "无返回值")
     
-    # 6. 提取并打印关键数据
-    session_new = cookies["SESSION_NEW"]
-    challenge = result["challenge"]
-    gt = result["gt"]
-    
-    print("="*50)
-    print(f"SESSION_NEW: {session_new}")
-    print(f"challenge: {challenge}")
-    print(f"gt: {gt}")
-    print("="*50)
+    # --------------------------
+    # 格式化打印所有数据
+    # --------------------------
+    print("="*70)
+    print(f"✅ 请求成功！")
+    print(f"📌 从响应头提取的 SESSION_NEW: {session_new}")
+    print(f"🔑 challenge: {challenge}")
+    print(f"🔐 gt: {gt}")
+    print("="*70)
 
+except requests.exceptions.RequestException as e:
+    print(f"❌ 请求失败：{str(e)}")
+    if 'response' in locals():
+        print(f"📄 响应内容：{response.text}")
+        print(f"📄 响应头Set-Cookie：{response.headers.get('Set-Cookie', '无')}")
 except Exception as e:
-    print(f"请求失败：{e}")
-    print(f"响应内容：{response.text if 'response' in locals() else '无响应'}")
+    print(f"❌ 其他错误：{str(e)}")
