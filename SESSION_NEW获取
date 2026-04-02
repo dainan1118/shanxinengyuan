@@ -1,0 +1,50 @@
+import requests
+
+# 1. 接口地址（你提供的POST地址）
+url = "https://snein.telfri-edu.com/index/geetest/auth/login"
+
+# 2. 严格复刻你提供的请求头（服务器校验关键）
+headers = {
+    "Host": "snein.telfri-edu.com",
+    "Connection": "keep-alive",
+    "Content-Length": "0",  # 无请求体，长度为0
+    "sec-ch-ua-platform": "\"Windows\"",
+    "X-Requested-With": "XMLHttpRequest",
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36",
+    "Accept": "text/html, */*",
+    "sec-ch-ua": "\"Chromium\";v=\"146\", \"Not-A.Brand\";v=\"24\", \"Google Chrome\";v=\"146\"",
+    "sec-ch-ua-mobile": "?0",
+    "Origin": "https://snein.telfri-edu.com",
+    "Sec-Fetch-Site": "same-origin",
+    "Sec-Fetch-Mode": "cors",
+    "Sec-Fetch-Dest": "empty",
+    "Referer": "https://snein.telfri-edu.com/",
+    "Accept-Encoding": "gzip, deflate, br, zstd",
+    "Accept-Language": "zh-CN,zh;q=0.9"
+}
+
+# 3. Cookie（你说留空也能返回数据，这里填你自己的SESSION_NEW即可）
+cookies = {
+    "SESSION_NEW": "NjgwYjU5MjUtMjU2Zi00NGQ5LTlhYTgtOTNlYzY5YjNjY2Rh"  # 可替换为你的真实SESSION
+}
+
+# 4. 发送POST请求（无请求体，严格匹配Content-Length:0）
+try:
+    response = requests.post(url, headers=headers, cookies=cookies, data=None)
+    # 5. 解析返回的JSON数据
+    result = response.json()
+    
+    # 6. 提取并打印关键数据
+    session_new = cookies["SESSION_NEW"]
+    challenge = result["challenge"]
+    gt = result["gt"]
+    
+    print("="*50)
+    print(f"SESSION_NEW: {session_new}")
+    print(f"challenge: {challenge}")
+    print(f"gt: {gt}")
+    print("="*50)
+
+except Exception as e:
+    print(f"请求失败：{e}")
+    print(f"响应内容：{response.text if 'response' in locals() else '无响应'}")
